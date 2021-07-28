@@ -1,0 +1,32 @@
+version: '3.1'
+services:
+
+  redis:
+    image: redis:latest
+    container_name: "redis"
+    ports:
+     - '6379:6379'
+
+  worker:
+    build: .
+    image: &img worker
+
+    command: celery -A app.tasks worker --loglevel=info --without-gossip --without-mingle --without-heartbeat -Ofair --pool=solo
+    depends_on:
+      - beat
+      - redis
+    restart: 'no'
+    volumes:
+      - .:/app
+
+  beat:
+    build: .
+    image: *img
+    command: celery -A app.tasks beat --loglevel=info
+    depends_on:
+      - redis
+    restart: 'no'
+    volumes:
+      - .:/app
+
+
